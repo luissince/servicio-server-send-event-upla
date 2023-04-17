@@ -186,6 +186,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	fmt.Println("Ejecutando la aplicación:", go_port)
 	http.ListenAndServe(go_port, nil)
 }
 
