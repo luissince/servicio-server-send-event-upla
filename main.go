@@ -55,7 +55,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
+	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type user struct {
@@ -112,6 +116,11 @@ func (h *hub) sendNotification(n notification) {
 }
 
 func main() {
+	time.LoadLocation("America/Lima")
+	godotenv.Load()
+
+	var go_port string = os.Getenv("GO_PORT")
+
 	h := &hub{}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +186,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	http.ListenAndServe("0.0.0.0:9000", nil)
+	http.ListenAndServe(go_port, nil)
 }
 
 // package main
