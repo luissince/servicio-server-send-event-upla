@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type Body struct {
+	Id      string `json:"id,omitempty"`
 	Codigo  string `json:"codigo"`
 	Titulo  string `json:"titulo"`
 	Mensaje string `json:"mensaje"`
@@ -44,6 +47,7 @@ func (h *HandlerEvent) addSubscription(id string, eventChan chan EventMessage) {
 	}
 	fmt.Println("Connected: ", id)
 	fmt.Println("Clients: ", len(h.clients))
+	fmt.Println("")
 }
 
 func (h *HandlerEvent) removeSubscription(id string) {
@@ -51,16 +55,21 @@ func (h *HandlerEvent) removeSubscription(id string) {
 	defer h.mutex.Unlock()
 	delete(h.clients, id)
 	fmt.Println("Desconected: ", id)
+	fmt.Println("Clients: ", len(h.clients))
+	fmt.Println("")
 }
 
 func (h *HandlerEvent) sendNotificationById(id string, eventChan EventMessage) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
+	fmt.Println(h.clients)
+
 	s, ok := h.clients[id]
 
 	if ok {
 		fmt.Println("enviando al usuario ", id, " ...")
+		fmt.Println("")
 		s.SendMessage <- eventChan
 	}
 }
@@ -72,6 +81,7 @@ func (h *HandlerEvent) sendNotificationAll(eventChan EventMessage) {
 	fmt.Println(h.clients)
 
 	fmt.Println("enviando a todos...")
+	fmt.Println("")
 
 	for _, client := range h.clients {
 		s, ok := h.clients[client.Id]
@@ -170,6 +180,10 @@ func (h *HandlerEvent) HandlerNotifyAll(w http.ResponseWriter, r *http.Request) 
 
 	body := Body{}
 	json.NewDecoder(r.Body).Decode(&body)
+
+	id := uuid.New()
+
+	body.Id = id.String()
 
 	event := EventMessage{
 		EventName: "notification",
