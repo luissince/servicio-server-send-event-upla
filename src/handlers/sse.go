@@ -24,6 +24,7 @@ type EventMessage struct {
 
 type Client struct {
 	Id          string
+	Codigo      string
 	SendMessage chan EventMessage
 }
 
@@ -38,15 +39,19 @@ func NewHandlerEvent() *HandlerEvent {
 	}
 }
 
-func (h *HandlerEvent) addSubscription(id string, eventChan chan EventMessage) {
+func (h *HandlerEvent) addSubscription(id string, codigo string, eventChan chan EventMessage) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 	h.clients[id] = &Client{
 		Id:          id,
+		Codigo:      codigo,
 		SendMessage: eventChan,
 	}
+	fmt.Println("")
+	fmt.Println("--------addSubscription---------")
 	fmt.Println("Connected: ", id)
 	fmt.Println("Clients: ", len(h.clients))
+	fmt.Println("Lista: ", h.clients)
 	fmt.Println("")
 }
 
@@ -54,24 +59,39 @@ func (h *HandlerEvent) removeSubscription(id string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 	delete(h.clients, id)
+	fmt.Println("")
+	fmt.Println("--------removeSubscription---------")
 	fmt.Println("Desconected: ", id)
 	fmt.Println("Clients: ", len(h.clients))
 	fmt.Println("")
 }
 
-func (h *HandlerEvent) sendNotificationById(id string, eventChan EventMessage) {
+func (h *HandlerEvent) sendNotificationById(codigo string, eventChan EventMessage) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
+	fmt.Println("")
+	fmt.Println("--------sendNotificationById---------")
 	fmt.Println(h.clients)
 
-	s, ok := h.clients[id]
-
-	if ok {
-		fmt.Println("enviando al usuario ", id, " ...")
-		fmt.Println("")
-		s.SendMessage <- eventChan
+	var newClients []*Client
+	for _, client := range h.clients {
+		if client.Codigo == codigo {
+			newClients = append(newClients, client)
+		}
 	}
+
+	for _, client := range newClients {
+		s, ok := h.clients[client.Id]
+
+		if ok {
+			fmt.Println("enviando al usuario ", codigo, " ...")
+			fmt.Println("")
+			s.SendMessage <- eventChan
+		}
+	}
+	fmt.Println("")
+
 }
 
 func (h *HandlerEvent) sendNotificationAll(eventChan EventMessage) {
@@ -106,15 +126,21 @@ func (h *HandlerEvent) HandlerSubcription(w http.ResponseWriter, r *http.Request
 	}
 
 	id := r.URL.Query().Get("id")
+	codigo := r.URL.Query().Get("codigo")
 
 	if id == "" {
 		http.Error(w, "El ID no existe", http.StatusBadRequest)
 		return
 	}
 
+	if codigo == "" {
+		http.Error(w, "El Código no existe", http.StatusBadRequest)
+		return
+	}
+
 	eventChan := make(chan EventMessage)
 
-	h.addSubscription(id, eventChan)
+	h.addSubscription(id, codigo, eventChan)
 
 	defer h.removeSubscription(id)
 
