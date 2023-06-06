@@ -18,7 +18,7 @@ func InitRouters(r *http.ServeMux) {
 	r.HandleFunc("/", Handler)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, _ *http.Request) {
 	reponse := Reponse{
 		Message: "Server Send Event",
 	}
